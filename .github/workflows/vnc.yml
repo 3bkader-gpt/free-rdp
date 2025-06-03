@@ -1,8 +1,13 @@
 name: Free VNC via Cloudflare
 
-on: push: workflow_dispatch:
+on:
+  push:
+  workflow_dispatch:
 
-jobs: build: runs-on: windows-latest timeout-minutes: 360
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 360
 
 steps:
   - name: Set VNC Password

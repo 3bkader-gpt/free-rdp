@@ -8,31 +8,29 @@ jobs:
   build:
     runs-on: windows-latest
     timeout-minutes: 360
+    steps:
+      - name: Set VNC Password
+        run: |
+          cmd /c echo | set /p="vncpassword" > password.txt
 
-steps:
-  - name: Set VNC Password
-    run: |
-      cmd /c echo | set /p="vncpassword" > password.txt
+      - name: Install Chocolatey
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
-  - name: Install Chocolatey
-    run: |
-      Set-ExecutionPolicy Bypass -Scope Process -Force
-      iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+      - name: Install TightVNC Server
+        run: |
+          choco install tightvnc -y
 
-  - name: Install TightVNC Server
-    run: |
-      choco install tightvnc -y
+      - name: Configure TightVNC Server
+        run: |
+          & "C:\Program Files\TightVNC\tvnserver.exe" -controlapp -passwd "vncpassword"
+          netsh advfirewall firewall add rule name="TightVNC" dir=in action=allow protocol=TCP localport=5900
 
-  - name: Configure TightVNC Server
-    run: |
-      & "C:\Program Files\TightVNC\tvnserver.exe" -controlapp -passwd "vncpassword"
-      netsh advfirewall firewall add rule name="TightVNC" dir=in action=allow protocol=TCP localport=5900
+      - name: Download Cloudflared
+        run: |
+          Invoke-WebRequest https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe -OutFile cloudflared.exe
 
-  - name: Download Cloudflared
-    run: |
-      Invoke-WebRequest https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe -OutFile cloudflared.exe
-
-  - name: Create Cloudflare Tunnel
-    run: |
-      ./cloudflared.exe tunnel --url vnc://localhost:5900
-
+      - name: Create Cloudflare Tunnel
+        run: |
+          .\cloudflared.exe tunnel --url vnc://localhost:5900
